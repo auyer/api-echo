@@ -1,0 +1,14 @@
+{
+    "Debug": "true",
+    "LogLocation": "./server.log",
+    "HttpPort": "80",
+    "HttpsPort": "443",
+    "TLSKeyLocation": "./devssl/server.key",
+    "TLSCertLocation": "./devssl/server.pem",
+    "DatabaseUser" : "user",
+    "DatabasePassword" : "pass",
+    "DatabaseName" : "name",
+    "DatabaseHost" : "localhost",
+    "DatabasePort" : "5432"
+
+}
