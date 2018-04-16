@@ -34,17 +34,16 @@ type Servidor struct {
 type ServidorController struct{} // THis is used to make functions callable from ServidorCOntroller
 
 //GetServidores funtion returns the full list of "servidores" in the database
-func (ctrl ServidorController) GetServidores(c echo.Context) {
+func (ctrl ServidorController) GetServidores(c echo.Context) error {
 	q := `select s.id_servidor, s.siape, s.id_pessoa, s.matricula_interna, s.nome_identificacao,
 		p.nome, p.data_nascimento, p.sexo from rh.servidor s
 	inner join comum.pessoa p on (s.id_pessoa = p.id_pessoa)` //Manual query
 	rows, err := db.GetDB().Query(q) //Get Database cursor from DB module
 	if err != nil {
 		log.Println(err)
-		c.JSON(400, ErrorBody{
+		return c.JSON(400, ErrorBody{
 			Reason: err.Error(),
 		})
-		return
 	}
 	defer rows.Close() //will close DB after function GetServidor is over.
 	var servidores []Servidor
@@ -54,10 +53,10 @@ func (ctrl ServidorController) GetServidores(c echo.Context) {
 		err := rows.Scan(&id, &siape, &idpessoa, &matriculainterna, &nomeidentificacao, &nome, &datanascimento, &sexo)
 		if err != nil {
 			log.Println(err)
-			c.JSON(400, ErrorBody{
+			return c.JSON(400, ErrorBody{
 				Reason: err.Error(),
 			})
-			return
+
 		}
 		// log.Println(id)
 		date, _ := time.Parse("1969-02-12", datanascimento)
@@ -74,33 +73,30 @@ func (ctrl ServidorController) GetServidores(c echo.Context) {
 	}
 	if err := rows.Err(); err != nil {
 		log.Println(err)
-		c.JSON(400, ErrorBody{
+		return c.JSON(400, ErrorBody{
 			Reason: err.Error(),
 		})
-		return
 	}
 	c.JSON(200, servidores)
 	if err != nil {
 		log.Println(err)
-		c.JSON(400, ErrorBody{
+		return c.JSON(400, ErrorBody{
 			Reason: err.Error(),
 		})
-		return
 	}
-	return
+	return nil
 }
 
 //GetServidorMat funtion returns the "servidor" matching a given id
-func (ctrl ServidorController) GetServidorMat(c echo.Context) {
+func (ctrl ServidorController) GetServidorMat(c echo.Context) error {
 	mat := c.Param("matricula") // URL parameter
 	// Data security checking to be insterted here
 	r, err := regexp.Compile(`\b[0-9]+\b`)
 	if !r.MatchString(mat) {
 		log.Println(err)
-		c.JSON(404, ErrorBody{
+		return c.JSON(404, ErrorBody{
 			Reason: err.Error(),
 		})
-		return
 	}
 	q := fmt.Sprintf(`select s.id_servidor, s.siape, s.id_pessoa, s.matricula_interna, s.nome_identificacao,
 		p.nome, p.data_nascimento, p.sexo from rh.servidor s
@@ -108,10 +104,9 @@ func (ctrl ServidorController) GetServidorMat(c echo.Context) {
 	rows, err := db.GetDB().Query(q)
 	if err != nil {
 		log.Println(err)
-		c.JSON(400, ErrorBody{
+		return c.JSON(400, ErrorBody{
 			Reason: err.Error(),
 		})
-		return
 	}
 	defer rows.Close()
 	var servidores []Servidor
@@ -121,10 +116,9 @@ func (ctrl ServidorController) GetServidorMat(c echo.Context) {
 		err := rows.Scan(&id, &siape, &idpessoa, &matriculainterna, &nomeidentificacao, &nome, &datanascimento, &sexo)
 		if err != nil {
 			log.Println(err)
-			c.JSON(400, ErrorBody{
+			return c.JSON(400, ErrorBody{
 				Reason: err.Error(),
 			})
-			return
 		}
 		date, _ := time.Parse("1969-02-12", datanascimento)
 		servidores = append(servidores, Servidor{
@@ -140,31 +134,24 @@ func (ctrl ServidorController) GetServidorMat(c echo.Context) {
 	}
 	if err := rows.Err(); err != nil {
 		log.Println(err)
-		c.JSON(400, ErrorBody{
+		return c.JSON(400, ErrorBody{
 			Reason: err.Error(),
 		})
-		return
 	}
-	c.JSON(200, servidores)
-
-	if err != nil {
-		return
-	}
-	return
+	return c.JSON(200, servidores)
 }
 
 //PostServidor function reads a JSON body and store it in the database
-func (ctrl ServidorController) PostServidor(c echo.Context) (err error) {
+func (ctrl ServidorController) PostServidor(c echo.Context) error {
 	regexcheck := false
 	var ser Servidor
 	var Reasons []ErrorBody
 	err := c.Bind(ser)
 	if err != nil {
 		log.Println(err)
-		c.JSON(400, ErrorBody{
+		return c.JSON(400, ErrorBody{
 			Reason: err.Error(),
 		})
-		return
 	}
 
 	// REGEX CHEKING PHASE
@@ -180,7 +167,7 @@ func (ctrl ServidorController) PostServidor(c echo.Context) (err error) {
 		time, err := time.Parse("2006-01-02 15:04:05 -0200", fmt.Sprint(ser.Datanascimento, " 00:00:00 -0200"))
 		if err != nil {
 			log.Println(err)
-			c.JSON(500, ErrorBody{
+			return c.JSON(500, ErrorBody{
 				Reason: err.Error(),
 			})
 		}
@@ -223,8 +210,7 @@ func (ctrl ServidorController) PostServidor(c echo.Context) (err error) {
 		})
 	}
 	if regexcheck {
-		c.JSON(400, Reasons)
-		return
+		return c.JSON(400, Reasons)
 	}
 	// END OF REGEX CHEKING PHASE
 	timestamp := time.Now().UTC().Format("2006-01-02T15:04:05-0700")
@@ -241,18 +227,11 @@ func (ctrl ServidorController) PostServidor(c echo.Context) (err error) {
 	rows, err := db.GetDB().Query(q)
 	if err != nil {
 		log.Println(err)
-		c.JSON(400, ErrorBody{
+		return c.JSON(400, ErrorBody{
 			Reason: err.Error(),
 		})
-		return
 	}
 	defer rows.Close()
-
-	//c.Status(201)
-	//w := http.ResponseWriter()
-	//c.Response()
-	//echo.NewResponse().Header()
-	c.Response().Header().Set("location", "/api/servidor/"+strconv.Itoa(ser.Matriculainterna))
-	//("location", "https://"+c.Request.Host+"/api/servidor/"+strconv.Itoa(ser.Matriculainterna))
-	return
+	c.Response().Header().Set(echo.HeaderLocation, fmt.Sprint("https://", c.Request().Host, "/api/servidor/", strconv.Itoa(ser.Matriculainterna)))
+	return c.String(201, "")
 }

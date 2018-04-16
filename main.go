@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/gin-gonic/gin"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"github.com/restsec/api-echo/config"
@@ -13,7 +12,7 @@ import (
 )
 
 func main() {
-	fmt.Println("Starting Gin Gonic API")
+	fmt.Println("Starting Echo API")
 	err := config.ReadConfig()
 	if err != nil {
 		fmt.Print("Error reading configuration file")
@@ -21,10 +20,8 @@ func main() {
 		return
 	}
 
-	log.SetOutput(config.LogFile)
-	gin.DefaultWriter = config.LogFile
+	//log.SetOutput(config.LogFile)
 	if config.ConfigParams.Debug != "true" {
-		gin.SetMode(gin.ReleaseMode)
 	}
 	// BEGIN HTTPS
 
@@ -41,17 +38,6 @@ func main() {
 	httpsRouter.GET("/api/servidor/:matricula", servidor.GetServidorMat) //Route with URL parameter
 	httpsRouter.POST("/api/servidor/", servidor.PostServidor)
 
-	// BEGIN HTTP
-	// httpRouter := gin.Default()
-
-	// httpRouter.GET("/api/servidores/", func(c *gin.Context) {
-	// 	c.Redirect(302, fmt.Sprint("https://", c.Request.Host, ".", c.Request.URL.Path))
-	// })
-	// httpRouter.GET("/api/servidor/:matricula", func(c *gin.Context) {
-	// 	c.Redirect(302, fmt.Sprint("https://", c.Request.Host, ".", c.Request.URL.Path))
-	// })
-
-	// go httpRouter.Run(":" + config.ConfigParams.HttpPort)
 	err = httpsRouter.StartTLS(":"+config.ConfigParams.HttpsPort, config.ConfigParams.TLSCertLocation, config.ConfigParams.TLSKeyLocation) // listen and serve on 0.0.0.0:8080
 	if err != nil {
 		fmt.Println(err.Error())

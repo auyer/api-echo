@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-gorp/gorp"
 	_ "github.com/lib/pq" //import postgres
-	"github.com/restsec/api-gingonic/config"
+	"github.com/restsec/api-echo/config"
 )
 
 //DB ...
